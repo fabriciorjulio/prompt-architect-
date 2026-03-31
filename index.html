@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#08090e">
+<meta property="og:title" content="Prompt Architect — Aprenda a criar prompts profissionais">
+<meta property="og:description" content="App gratuito e interativo para aprender engenharia de prompt. Aulas, quizzes e um construtor com análise automática.">
+<meta property="og:type" content="website">
+<title>Prompt Architect — Aprenda Engenharia de Prompt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #08090e; --bg2: #111827; --bg3: #0c1322;
+  --border: #1e293b; --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b; --text4: #475569;
+  --accent: #818cf8; --accent2: #a5b4fc; --accent3: #c4b5fd;
+  --green: #22c55e; --red: #ef4444; --yellow: #f59e0b; --cyan: #06b6d4; --pink: #ec4899; --purple: #8b5cf6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg); color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+#app { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+::-webkit-scrollbar { width: 0; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+textarea, input { font-family: inherit; }
+textarea:focus, input:focus { outline: none; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes glow { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes slideIn { from { opacity:0; transform: translateX(30px); } to { opacity:1; transform: translateX(0); } }
+
+.fx-up { animation: fadeUp .45s ease both; }
+.fx-in { animation: fadeIn .4s ease both; }
+.fx-float { animation: float 3s ease-in-out infinite; }
+.fx-slide { animation: slideIn .4s ease both; }
+
+/* Shared */
+.pill {
+  padding: 7px 16px; border-radius: 24px; font-size: 13px; font-weight: 500;
+  white-space: nowrap; transition: all .2s;
+  border: 1.5px solid var(--border);
+  background: var(--bg2); color: var(--text2);
+}
+.pill.on { border-color: var(--accent); background: rgba(129,140,248,.1); color: var(--accent); }
+
+.card {
+  border-radius: 14px; padding: 18px; margin-bottom: 12px;
+  background: var(--bg2); border: 1px solid var(--border);
+}
+
+.btn-primary {
+  width: 100%; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700;
+  background: var(--text); color: var(--bg); transition: all .3s; letter-spacing: -.3px;
+}
+.btn-primary:active { transform: scale(.98); }
+
+.btn-accent {
+  width: 100%; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+}
+
+.btn-ghost {
+  width: 100%; padding: 13px; border-radius: 12px; font-size: 13px; font-weight: 500;
+  border: 1.5px solid var(--border); background: var(--bg2); color: var(--text2);
+}
+
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+}
+
+.dots { display: flex; gap: 6px; justify-content: center; padding: 12px 0; }
+.dot {
+  height: 8px; border-radius: 4px; transition: all .3s;
+  background: var(--border);
+}
+.dot.active { width: 24px; background: var(--accent); }
+.dot.done { width: 8px; background: rgba(129,140,248,.4); }
+.dot.future { width: 8px; }
+
+.compare-bad {
+  padding: 14px; border-radius: 12px 12px 4px 4px;
+  background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.15);
+}
+.compare-good {
+  padding: 14px; border-radius: 4px 4px 12px 12px; margin-top: 2px;
+  background: rgba(34,197,94,.06); border: 1px solid rgba(34,197,94,.15);
+}
+
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  padding: 8px 20px; padding-bottom: max(8px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  display: flex; gap: 4px;
+}
+.nav-btn {
+  flex: 1; padding: 6px 4px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: 10px; font-weight: 500; color: var(--text4); transition: all .2s;
+}
+.nav-btn.on { background: rgba(129,140,248,.1); color: var(--accent2); }
+
+.progress-ring {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.progress-ring-inner {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+
+.section-tab {
+  padding: 8px 12px; border-radius: 10px 10px 0 0; font-size: 12px;
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+  border-bottom: 2px solid transparent; color: var(--text4); transition: all .2s;
+}
+.section-tab.on { border-bottom-color: var(--accent); background: rgba(17,24,39,.6); color: var(--text); font-weight: 600; }
+
+.tag { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PROMPT ARCHITECT — 100% Standalone, Zero API Dependencies
+   ═══════════════════════════════════════════════════════════ */
+
+// ─── DATA ───
+
+const LESSONS = [
+  {
+    id:"basics", emoji:"🌱", title:"O que é um Prompt?", subtitle:"Fundamentos", color:"#22c55e", duration:"3 min",
+    cards:[
+      { title:"Prompt = Instrução",
+        body:"Um prompt é a instrução que você dá para uma IA. Quanto melhor a instrução, melhor o resultado.\n\nPense assim: se você pede \"faça um bolo\", o resultado é genérico. Se pede \"faça um bolo de chocolate com cobertura de ganache, para 8 pessoas, sem lactose\" — agora sim!",
+        example:{ bad:"Escreva um texto sobre marketing", good:"Você é um especialista em marketing digital. Escreva um post de LinkedIn de 150 palavras sobre como pequenos negócios podem usar IA para aumentar vendas, com 3 dicas práticas e um CTA no final." }
+      },
+      { title:"A Estrutura Mágica",
+        body:"Todo bom prompt tem até 6 blocos. Você não precisa usar todos — mas quanto mais usar, melhor:",
+        blocks:[
+          {icon:"🎭",name:"Papel",desc:"QUEM a IA deve ser"},
+          {icon:"🌍",name:"Contexto",desc:"A situação / cenário"},
+          {icon:"🎯",name:"Tarefa",desc:"O QUE fazer (o mais importante!)"},
+          {icon:"📐",name:"Formato",desc:"COMO entregar a resposta"},
+          {icon:"🚧",name:"Restrições",desc:"O que NÃO fazer"},
+          {icon:"💡",name:"Exemplos",desc:"Mostrar o que você quer"}
+        ]
+      },
+      { title:"Sua vez! 🎮",
+        body:"Identifique o que está FALTANDO neste prompt:\n\n\"Me ajuda a escrever um e-mail pro meu chefe pedindo férias\"",
+        quiz:{
+          options:[
+            {text:"Falta o Papel (quem a IA deve ser)",correct:false},
+            {text:"Falta Formato e Tom de voz",correct:true},
+            {text:"Está perfeito assim",correct:false}
+          ],
+          explanation:"O prompt tem tarefa e contexto implícito, mas não diz o tom (formal? informal?), o tamanho, nem como estruturar. Resultado: resposta genérica!"
+        }
+      }
+    ]
+  },
+  {
+    id:"role", emoji:"🎭", title:"Papel / Role", subtitle:"Dê expertise à IA", color:"#8b5cf6", duration:"3 min",
+    cards:[
+      { title:"Por que definir um papel?",
+        body:"Quando você diz \"Você é um nutricionista com 15 anos de experiência\", a IA ativa todo o conhecimento daquela área e responde com a profundidade de um especialista.\n\nSem papel → resposta superficial de generalista\nCom papel → resposta profunda de expert",
+        example:{ bad:"Me dá uma dieta pra emagrecer", good:"Você é um nutricionista funcional com 15 anos de experiência em emagrecimento saudável. Considere que sou homem, 30 anos, 85kg, sedentário e com intolerância a lactose." }
+      },
+      { title:"Fórmula do Papel Perfeito",
+        body:"Use esta fórmula:\n\n\"Você é um(a) [PROFISSÃO] com [X] anos de experiência em [ESPECIALIDADE], que trabalha com [PÚBLICO/CONTEXTO].\"\n\nQuanto mais específico, melhor:",
+        example:{ bad:"Você é um professor", good:"Você é um professor de física do ensino médio com 10 anos de experiência, conhecido por usar analogias do cotidiano para explicar conceitos complexos de forma que adolescentes entendam." }
+      },
+      { title:"Quiz: Qual papel é melhor? 🎮",
+        body:"Cenário: Você quer criar posts para Instagram de uma loja de roupas femininas.",
+        quiz:{
+          options:[
+            {text:"Você é um redator",correct:false},
+            {text:"Social media manager especialista em moda feminina, com experiência em marcas brasileiras D2C e tom jovem e empoderador",correct:true},
+            {text:"Você entende de Instagram",correct:false}
+          ],
+          explanation:"A segunda opção define profissão, especialidade, mercado e tom. A IA vai gerar conteúdo muito mais alinhado!"
+        }
+      }
+    ]
+  },
+  {
+    id:"context", emoji:"🌍", title:"Contexto é Rei", subtitle:"A IA não sabe nada sobre você", color:"#06b6d4", duration:"3 min",
+    cards:[
+      { title:"A IA começa do zero",
+        body:"A IA não sabe quem você é, o que sua empresa faz, nem qual problema você está tentando resolver.\n\nRegra de ouro: se a informação é relevante para a resposta, inclua no prompt!",
+        example:{ bad:"Crie uma campanha pro meu produto", good:"Contexto: Sou dono de uma marca de cosméticos veganos chamada 'NaturaBio', com 2 anos de mercado. Público: mulheres 25-40, classe B, que valorizam sustentabilidade. Estamos lançando um sérum facial com vitamina C. Orçamento: R$5.000 para mídia paga." }
+      },
+      { title:"Checklist do Contexto",
+        body:"Sempre se pergunte antes de escrever:",
+        blocks:[
+          {icon:"🏢",name:"Quem sou?",desc:"Empresa, cargo, área"},
+          {icon:"👥",name:"Pra quem?",desc:"Público-alvo da resposta"},
+          {icon:"📍",name:"Onde/Quando?",desc:"Mercado, timing, canal"},
+          {icon:"❓",name:"Por quê?",desc:"Qual problema resolver"},
+          {icon:"📊",name:"Dados?",desc:"Números, referências"},
+          {icon:"⚠️",name:"Restrições?",desc:"Orçamento, prazo, limites"}
+        ]
+      }
+    ]
+  },
+  {
+    id:"advanced", emoji:"🚀", title:"Técnicas Avançadas", subtitle:"Nível profissional", color:"#f59e0b", duration:"4 min",
+    cards:[
+      { title:"Few-Shot (Exemplos)",
+        body:"Mostrar exemplos do que você QUER e do que NÃO quer é a técnica mais poderosa que existe. A IA aprende o padrão pelo exemplo.",
+        example:{ bad:"Escreva títulos criativos", good:"Escreva títulos pro meu blog. Siga este padrão:\n\nBOM: '5 erros que estão matando seu Instagram (e como corrigir hoje)'\nBOM: 'Eu faturei R$50k com essa estratégia simples'\nRUIM: 'Dicas de marketing digital'\nRUIM: 'Como crescer no Instagram'" }
+      },
+      { title:"Chain of Thought",
+        body:"Peça para a IA \"pensar passo a passo\". Isso força o modelo a raciocinar antes de concluir.\n\nFunciona especialmente bem para:\n→ Problemas matemáticos\n→ Análises complexas\n→ Decisões com múltiplas variáveis\n→ Debugging de código",
+        example:{ bad:"Qual a melhor estratégia de pricing?", good:"Analise passo a passo qual estratégia de pricing é melhor para meu SaaS:\n1. Liste os modelos possíveis\n2. Avalie prós e contras de cada um\n3. Considere meu contexto (B2B, ticket médio R$200, 500 clientes)\n4. Recomende o melhor com justificativa" }
+      },
+      { title:"Tags XML",
+        body:"Use tags como <role>, <context>, <task> para separar seções. Modelos como o Claude entendem XML nativamente.\n\nIsso é especialmente importante para prompts longos — evita que o modelo confunda instruções com contexto.",
+        example:{ bad:"Você é um analista. Eu tenho dados de vendas. Analise e me dê insights. Use formato de tabela.", good:"<role>\nAnalista de dados sênior em e-commerce\n</role>\n\n<context>\nDados de vendas Q1 2025\n</context>\n\n<task>\nIdentifique os 3 principais insights\n</task>\n\n<format>\nTabela: Insight | Evidência | Ação\n</format>" }
+      },
+      { title:"Quiz: Técnicas 🎮",
+        body:"Você precisa que a IA resolva um problema de lógica complexo. Qual técnica usar?",
+        quiz:{
+          options:[
+            {text:"Few-shot com exemplos de respostas certas e erradas",correct:false},
+            {text:"Chain of Thought — pedir para raciocinar passo a passo",correct:true},
+            {text:"Definir um papel de professor",correct:false}
+          ],
+          explanation:"Chain of Thought é ideal para raciocínio lógico. O Few-shot é melhor para padronizar formato/estilo, e Role para ativar expertise."
+        }
+      }
+    ]
+  },
+  {
+    id:"data", emoji:"🗄️", title:"Fontes de Dados & RAG", subtitle:"Conecte dados reais", color:"#ec4899", duration:"4 min",
+    cards:[
+      { title:"O que é RAG?",
+        body:"RAG (Retrieval-Augmented Generation) é quando a IA busca informações em uma base de dados ANTES de responder. Em vez de inventar, ela consulta dados reais.\n\nExemplo: chatbot de suporte que busca na base de artigos antes de responder.",
+        blocks:[
+          {icon:"🧲",name:"Vector Store",desc:"Busca por similaridade semântica"},
+          {icon:"🔗",name:"API Externa",desc:"Dados em tempo real"},
+          {icon:"🗃️",name:"Banco de Dados",desc:"Consultas SQL estruturadas"},
+          {icon:"📄",name:"Documentos",desc:"PDFs, manuais, bases"}
+        ]
+      },
+      { title:"Chaves de Cruzamento",
+        body:"Quando você tem múltiplas fontes de dados, as 'chaves de cruzamento' conectam uma fonte à outra.\n\nExemplo: user_id aparece na tabela de pedidos E na tabela de clientes. Essa é a chave que permite cruzar dados e personalizar a resposta.\n\nNo prompt, defina explicitamente quais chaves usar:",
+        example:{ bad:"Use os dados do cliente pra responder", good:"Fontes disponíveis:\n- base_clientes (chave: user_id)\n- base_pedidos (chave: user_id, order_id)\n- base_produtos (chave: product_id)\n\nCruzamento: Use user_id para conectar cliente → pedidos. Use product_id para enriquecer com detalhes." }
+      },
+      { title:"Quiz: RAG 🎮",
+        body:"Seu chatbot de suporte respondeu algo errado sobre o preço de um produto. O que provavelmente faltou?",
+        quiz:{
+          options:[
+            {text:"Um role melhor definido",correct:false},
+            {text:"Uma regra de fallback dizendo para não inventar dados",correct:false},
+            {text:"Uma fonte de dados com preços atualizados + instrução para usar APENAS dados da base",correct:true}
+          ],
+          explanation:"O problema principal é que o modelo não tinha acesso a dados reais de preço. A solução é conectar uma fonte confiável (API ou banco) e instruir: 'Use APENAS os dados retornados. Se não encontrar, diga que não sabe.'"
+        }
+      }
+    ]
+  }
+];
+
+const SECTION_META = [
+  {id:"role",icon:"🎭",label:"Papel",placeholder:"Quem a IA deve ser...\nEx: Você é um nutricionista funcional com 15 anos de experiência...",tip:"Profissão + experiência + especialidade",required:true},
+  {id:"context",icon:"🌍",label:"Contexto",placeholder:"Cenário, situação, background...\nEx: Minha empresa é uma startup de SaaS B2B com 50 clientes...",tip:"Tudo que a IA precisa saber antes de executar",required:true},
+  {id:"task",icon:"🎯",label:"Tarefa",placeholder:"O que exatamente fazer...\nEx: Crie 5 variações de copy para anúncios no Instagram...",tip:"Verbo de ação + o quê + para quem",required:true},
+  {id:"format",icon:"📐",label:"Formato",placeholder:"Como entregar a resposta...\nEx: Tabela markdown com colunas: Copy | Gatilho | CTA",tip:"Tabela, lista, JSON, parágrafos...",required:false},
+  {id:"constraints",icon:"🚧",label:"Restrições",placeholder:"O que NÃO fazer, limites, tom...\nEx: Sem jargões, tom informal, máximo 150 caracteres...",tip:"Proibições, tom, tamanho, idioma",required:false},
+  {id:"examples",icon:"💡",label:"Exemplos",placeholder:"Bom: 'exemplo positivo'\nRuim: 'exemplo negativo'\n\nMostrar o padrão que você quer.",tip:"A técnica mais poderosa que existe!",required:false}
+];
+
+const TEMPLATES = [
+  { id:"marketing",emoji:"📣",name:"Marketing",
+    s:{role:"Você é um estrategista de marketing digital com 12 anos de experiência em growth e performance para empresas brasileiras.",context:"",task:"",format:"Entregue em formato estruturado com seções claras, bullets para ações práticas e métricas sugeridas.",constraints:"Tom profissional mas acessível. Foco em ações práticas e mensuráveis. Considere o mercado brasileiro.",examples:""}},
+  { id:"code",emoji:"💻",name:"Código",
+    s:{role:"Você é um engenheiro de software sênior, especialista em código limpo, design patterns e boas práticas.",context:"",task:"",format:"Código comentado em blocos markdown. Inclua: explicação, código completo e exemplos de uso.",constraints:"SOLID. Legibilidade. Edge cases. Tipagem. Sem dependências desnecessárias.",examples:""}},
+  { id:"content",emoji:"✍️",name:"Conteúdo",
+    s:{role:"Você é um copywriter e content strategist com experiência em redes sociais e blogs.",context:"",task:"",format:"Texto pronto para publicar, com títulos, subtítulos e CTAs.",constraints:"Original e envolvente. Zero clichês. SEO-friendly quando para blog.",examples:""}},
+  { id:"analysis",emoji:"📊",name:"Análise",
+    s:{role:"Você é um analista sênior com expertise em transformar dados complexos em insights acionáveis.",context:"",task:"",format:"Resumo Executivo → Análise → Recomendações priorizadas → Próximos Passos.",constraints:"Base em dados. Diferencie fatos de inferências. Quantifique sempre.",examples:""}},
+  { id:"support",emoji:"🎧",name:"Suporte",
+    s:{role:"Você é um agente de suporte empático e eficiente, treinado para resolver no primeiro contato.",context:"",task:"",format:"Saudação → Entendimento → Solução → Próximo passo. Máx 4 parágrafos.",constraints:"Empático e profissional. Nunca culpe o cliente. Se não souber, escale.",examples:""}},
+  { id:"education",emoji:"📚",name:"Educação",
+    s:{role:"Você é um professor com dom para explicar conceitos complexos usando analogias do dia a dia.",context:"",task:"",format:"Conceito → Analogia simples → Exemplo prático → Mini-exercício → Resumo.",constraints:"Linguagem acessível. Do simples ao complexo. Sem jargão desnecessário.",examples:""}}
+];
+
+// ─── ANALYZER (local, no API) ───
+
+function analyzePrompt(sections) {
+  const r = { score:0, items:[], tips:[] };
+  let s = 0;
+
+  // Role
+  if(sections.role.trim()) {
+    s += 15;
+    if(sections.role.length > 80) { s += 5; r.items.push({t:"✅",c:"Role detalhado e específico"}); }
+    else r.tips.push("Detalhe mais o Role — adicione anos de experiência e especialidade");
+    if(/experiência|especialista|sênior|expert/i.test(sections.role)) { s += 3; }
+  } else { r.items.push({t:"🔴",c:"Role está vazio — defina QUEM a IA deve ser"}); r.tips.push("Adicione: 'Você é um(a) [profissão] com [X] anos de experiência em [especialidade]'"); }
+
+  // Context
+  if(sections.context.trim()) {
+    s += 15;
+    if(sections.context.length > 100) { s += 5; r.items.push({t:"✅",c:"Contexto rico e informativo"}); }
+    else r.tips.push("Expanda o contexto — quem é você, público-alvo, mercado, dados relevantes");
+  } else { r.items.push({t:"🔴",c:"Contexto vazio — a IA não sabe nada sobre você"}); r.tips.push("Inclua: empresa, público, situação, dados relevantes"); }
+
+  // Task
+  if(sections.task.trim()) {
+    s += 20;
+    if(/crie|escreva|analise|compare|resuma|liste|gere|desenvolva|avalie|identifique/i.test(sections.task)) { s += 5; r.items.push({t:"✅",c:"Tarefa com verbo de ação claro"}); }
+    else r.tips.push("Comece a tarefa com um verbo de ação: Crie, Analise, Escreva, Compare...");
+    if(sections.task.length > 60) s += 3;
+  } else { r.items.push({t:"🔴",c:"Tarefa vazia — sem ela, a IA não sabe o que fazer"}); r.tips.push("Defina exatamente o que a IA deve produzir"); }
+
+  // Format
+  if(sections.format.trim()) {
+    s += 10;
+    r.items.push({t:"✅",c:"Formato de saída definido"});
+    if(/tabela|json|lista|markdown|bullet|seção|coluna/i.test(sections.format)) s += 3;
+  } else { r.tips.push("Defina o formato de saída — tabela, lista, JSON, parágrafos?"); }
+
+  // Constraints
+  if(sections.constraints.trim()) {
+    s += 8;
+    r.items.push({t:"✅",c:"Restrições definidas"});
+    if(/não|nunca|evite|máximo|mínimo|proibido/i.test(sections.constraints)) s += 3;
+  } else { r.tips.push("Adicione restrições: tom de voz, tamanho, o que NÃO fazer"); }
+
+  // Examples
+  if(sections.examples.trim()) {
+    s += 10;
+    r.items.push({t:"✅",c:"Exemplos fornecidos — técnica poderosa!"});
+    if(sections.examples.length > 80) s += 5;
+    if(/bom|ruim|exemplo|correto|incorreto|✅|❌/i.test(sections.examples)) { s += 3; r.items.push({t:"✅",c:"Exemplos positivos E negativos — excelente!"}); }
+  } else { r.tips.push("Adicione exemplos do que você quer e do que NÃO quer — é a técnica mais poderosa!"); }
+
+  // Bonus
+  if(/<\w+>/.test(sections.role+sections.context+sections.task)) { s += 2; }
+
+  r.score = Math.min(100, s);
+  
+  if(r.score >= 80) r.grade = { label:"Excelente", emoji:"🔥", color:"#22c55e" };
+  else if(r.score >= 60) r.grade = { label:"Bom", emoji:"👍", color:"#f59e0b" };
+  else if(r.score >= 35) r.grade = { label:"Em progresso", emoji:"🔧", color:"#f59e0b" };
+  else r.grade = { label:"Iniciando", emoji:"📝", color:"#ef4444" };
+
+  return r;
+}
+
+// ─── RENDER ENGINE (Vanilla JS, no React needed) ───
+
+const state = {
+  view: "splash",  // splash | home | learn | build | result
+  lesson: null,
+  card: 0,
+  quiz: null,
+  completed: JSON.parse(localStorage.getItem("pa_done")||"[]"),
+  sections: { role:"", context:"", task:"", format:"", constraints:"", examples:"" },
+  activeSection: "role",
+  template: null,
+  copied: false,
+};
+
+function save() { localStorage.setItem("pa_done", JSON.stringify(state.completed)); }
+
+function $(sel) { return document.querySelector(sel); }
+function h(tag, cls, html, attrs) {
+  const el = document.createElement(tag);
+  if(cls) el.className = cls;
+  if(html !== undefined && html !== null) el.innerHTML = html;
+  if(attrs) Object.entries(attrs).forEach(([k,v]) => {
+    if(k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if(k === "style" && typeof v === "object") Object.assign(el.style, v);
+    else el.setAttribute(k, v);
+  });
+  return el;
+}
+
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  app.scrollTop = 0;
+
+  // BG glows
+  const bg = h("div","",null,{style:{position:"fixed",inset:"0",pointerEvents:"none",zIndex:"0"}});
+  bg.appendChild(h("div","",null,{style:{position:"absolute",top:"-20%",left:"-10%",width:"60%",height:"50%",background:"radial-gradient(circle,rgba(99,102,241,.05) 0%,transparent 70%)"}}));
+  bg.appendChild(h("div","",null,{style:{position:"absolute",bottom:"-20%",right:"-10%",width:"50%",height:"50%",background:"radial-gradient(circle,rgba(6,182,212,.03) 0%,transparent 70%)"}}));
+  app.appendChild(bg);
+
+  const main = h("div","",null,{style:{position:"relative",zIndex:"1"}});
+  app.appendChild(main);
+
+  if(state.view === "splash") renderSplash(main);
+  else if(state.view === "home") renderHome(main);
+  else if(state.view === "learn") renderLearn(main);
+  else if(state.view === "build") renderBuild(main);
+  else if(state.view === "result") renderResult(main);
+
+  if(state.view !== "splash") renderNav(main);
+}
+
+/* ═══ SPLASH ═══ */
+function renderSplash(p) {
+  const w = h("div","fx-in",null,{style:{height:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",padding:"32px"}});
+  w.appendChild(h("div","fx-float","🧠",{style:{fontSize:"64px",marginBottom:"24px"}}));
+  const t = h("h1","","Prompt<br>Architect",{style:{fontSize:"34px",fontWeight:"800",letterSpacing:"-1px",lineHeight:"1.1",background:"linear-gradient(135deg,#06b6d4,#818cf8,#c084fc,#f472b6)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}});
+  w.appendChild(t);
+  w.appendChild(h("p","","Aprenda a falar com IA<br>como um profissional",{style:{color:"var(--text3)",fontSize:"14px",marginTop:"12px"}}));
+  w.appendChild(h("p","","por Fabricio Julio",{style:{color:"var(--accent)",fontSize:"12px",fontWeight:"600",marginTop:"16px",letterSpacing:".5px",textTransform:"uppercase",opacity:".7"}}));
+  const dots = h("div","",null,{style:{marginTop:"32px",display:"flex",gap:"6px"}});
+  [0,1,2].forEach(i => {
+    dots.appendChild(h("div","",null,{style:{width:"8px",height:"8px",borderRadius:"50%",background:"var(--accent)",animation:`glow 1.5s ease-in-out infinite`,animationDelay:`${i*.3}s`}}));
+  });
+  w.appendChild(dots);
+  p.appendChild(w);
+  setTimeout(() => { state.view = "home"; render(); }, 2500);
+}
+
+/* ═══ HOME ═══ */
+function renderHome(p) {
+  const w = h("div","fx-up",null,{style:{padding:"24px 20px 100px"}});
+
+  // Header
+  const hdr = h("div","",null,{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"28px"}});
+  const left = h("div");
+  left.appendChild(h("h1","","Prompt Architect",{style:{fontSize:"24px",fontWeight:"800",letterSpacing:"-.5px",color:"#f1f5f9"}}));
+  left.appendChild(h("p","","Domine a arte de instruir IAs",{style:{fontSize:"13px",color:"var(--text3)",marginTop:"4px"}}));
+  left.appendChild(h("p","","por Fabricio Julio",{style:{fontSize:"10px",color:"var(--accent)",marginTop:"2px",fontWeight:"600",opacity:".6"}}));
+  hdr.appendChild(left);
+  const shareBtn = h("button","","📤 Compartilhar",{style:{padding:"8px 16px",borderRadius:"20px",background:"rgba(34,197,94,.1)",border:"1.5px solid rgba(34,197,94,.25)",color:"var(--green)",fontSize:"12px",fontWeight:"600"},onClick:shareApp});
+  hdr.appendChild(shareBtn);
+  w.appendChild(hdr);
+
+  // Quick actions
+  const grid = h("div","",null,{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"32px"}});
+  const learnBtn = h("button","","<div style='font-size:28px;margin-bottom:8px'>📖</div><div>Aprender</div><div style='font-size:11px;color:#7c3aed;margin-top:4px'>" + LESSONS.length + " aulas interativas</div>",{style:{padding:"24px 16px",borderRadius:"16px",background:"linear-gradient(135deg,#1e1b4b,#312e81)",border:"1px solid rgba(67,56,202,.25)",color:"#c4b5fd",fontSize:"14px",fontWeight:"600",textAlign:"left"},onClick:()=>{ state.view="learn"; state.lesson=LESSONS[0]; state.card=0; state.quiz=null; render(); }});
+  const buildBtn = h("button","","<div style='font-size:28px;margin-bottom:8px'>🔨</div><div>Construir</div><div style='font-size:11px;color:#06b6d4;margin-top:4px'>Builder + análise</div>",{style:{padding:"24px 16px",borderRadius:"16px",background:"linear-gradient(135deg,#0c2d48,#164e63)",border:"1px solid rgba(14,116,144,.25)",color:"#67e8f9",fontSize:"14px",fontWeight:"600",textAlign:"left"},onClick:()=>{ state.view="build"; render(); }});
+  grid.appendChild(learnBtn); grid.appendChild(buildBtn);
+  w.appendChild(grid);
+
+  // Lessons
+  w.appendChild(h("h2","","📚 Trilha de Aprendizado",{style:{fontSize:"16px",fontWeight:"700",marginBottom:"14px"}}));
+  LESSONS.forEach(lesson => {
+    const done = state.completed.includes(lesson.id);
+    const btn = h("button","",null,{style:{width:"100%",padding:"16px 18px",borderRadius:"14px",marginBottom:"10px",background:"var(--bg2)",border:`1px solid ${lesson.color}20`,display:"flex",alignItems:"center",gap:"14px",textAlign:"left"},onClick:()=>{ state.lesson=lesson; state.card=0; state.quiz=null; state.view="learn"; render(); }});
+    const icon = h("div","",done?"✅":lesson.emoji,{style:{width:"48px",height:"48px",borderRadius:"12px",background:`${lesson.color}12`,border:`1px solid ${lesson.color}25`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",flexShrink:"0"}});
+    const info = h("div","",null,{style:{flex:"1",minWidth:"0"}});
+    info.appendChild(h("div","",lesson.title,{style:{fontSize:"14px",fontWeight:"600",color:"#f1f5f9"}}));
+    info.appendChild(h("div","",lesson.subtitle,{style:{fontSize:"12px",color:"var(--text3)",marginTop:"2px"}}));
+    btn.appendChild(icon); btn.appendChild(info);
+    btn.appendChild(h("div","",lesson.duration,{style:{fontSize:"11px",color:"var(--text4)",flexShrink:"0"}}));
+    w.appendChild(btn);
+  });
+
+  // What you'll learn
+  const learn = h("div","card","",{style:{marginTop:"24px"}});
+  learn.appendChild(h("h3","","🎯 O que você vai aprender",{style:{fontSize:"14px",fontWeight:"700",marginBottom:"12px"}}));
+  ["Estruturar prompts com a fórmula de 6 blocos","Dar expertise à IA com Roles poderosos","Usar contexto para respostas personalizadas","Técnicas: Few-shot, Chain of Thought, XML","Conectar fontes de dados reais (RAG)","Construir prompts de produção do zero"].forEach(t => {
+    const row = h("div","",null,{style:{display:"flex",gap:"10px",alignItems:"flex-start",marginBottom:"8px"}});
+    row.appendChild(h("span","","✓",{style:{color:"var(--green)",fontSize:"12px",marginTop:"2px"}}));
+    row.appendChild(h("span","",t,{style:{fontSize:"13px",color:"var(--text2)",lineHeight:"1.5"}}));
+    learn.appendChild(row);
+  });
+  w.appendChild(learn);
+
+  // Footer credit
+  w.appendChild(h("div","","Criado com 🧠 por <strong>Fabricio Julio</strong>",{style:{textAlign:"center",fontSize:"11px",color:"var(--text4)",marginTop:"24px",paddingBottom:"8px"}}));
+  p.appendChild(w);
+}
+
+/* ═══ LEARN ═══ */
+function renderLearn(p) {
+  if(!state.lesson) { state.lesson = LESSONS[0]; state.card = 0; }
+  const lesson = state.lesson;
+  const card = lesson.cards[state.card];
+  const w = h("div","fx-in",null,{style:{padding:"0 0 100px"}});
+
+  // Header
+  const hdr = h("div","",null,{style:{padding:"16px 20px",display:"flex",alignItems:"center",gap:"12px",borderBottom:`1px solid ${lesson.color}12`}});
+  hdr.appendChild(h("button","","←",{style:{color:"var(--text3)",fontSize:"20px"},onClick:()=>{ state.view="home"; render(); }}));
+  hdr.appendChild(h("div","",`<span style="font-weight:700;color:${lesson.color}">${lesson.emoji} ${lesson.title}</span>`,{style:{flex:"1",fontSize:"15px"}}));
+  hdr.appendChild(h("div","",`${state.card+1}/${lesson.cards.length}`,{style:{fontSize:"11px",color:"var(--text4)"}}));
+  w.appendChild(hdr);
+
+  // Dots
+  const dots = h("div","dots");
+  lesson.cards.forEach((_,i) => {
+    const cls = i===state.card ? "dot active" : i<state.card ? "dot done" : "dot future";
+    dots.appendChild(h("div",cls,null,{style:{width:i===state.card?"24px":"8px"}}));
+  });
+  w.appendChild(dots);
+
+  // Content
+  const content = h("div","fx-slide",null,{style:{padding:"8px 20px"}});
+  content.appendChild(h("h2","",card.title,{style:{fontSize:"20px",fontWeight:"800",marginBottom:"16px",letterSpacing:"-.3px"}}));
+  content.appendChild(h("p","",card.body.replace(/\n/g,"<br>"),{style:{fontSize:"14px",color:"#cbd5e1",lineHeight:"1.7",marginBottom:"20px"}}));
+
+  // Blocks
+  if(card.blocks) {
+    const g = h("div","",null,{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"20px"}});
+    card.blocks.forEach(b => {
+      const bl = h("div","",null,{style:{padding:"14px",borderRadius:"12px",background:"var(--bg2)",border:"1px solid var(--border)"}});
+      bl.appendChild(h("div","",b.icon,{style:{fontSize:"20px",marginBottom:"6px"}}));
+      bl.appendChild(h("div","",b.name,{style:{fontSize:"13px",fontWeight:"600"}}));
+      bl.appendChild(h("div","",b.desc,{style:{fontSize:"11px",color:"var(--text3)",marginTop:"2px"}}));
+      g.appendChild(bl);
+    });
+    content.appendChild(g);
+  }
+
+  // Example
+  if(card.example) {
+    const bad = h("div","compare-bad");
+    bad.appendChild(h("div","","❌ FRACO",{style:{fontSize:"11px",fontWeight:"700",color:"var(--red)",marginBottom:"6px"}}));
+    bad.appendChild(h("div","",card.example.bad,{style:{fontSize:"13px",color:"#fca5a5",lineHeight:"1.5",fontStyle:"italic"}}));
+    content.appendChild(bad);
+    const good = h("div","compare-good");
+    good.appendChild(h("div","","✅ FORTE",{style:{fontSize:"11px",fontWeight:"700",color:"var(--green)",marginBottom:"6px"}}));
+    good.appendChild(h("div","",card.example.good.replace(/\n/g,"<br>"),{style:{fontSize:"13px",color:"#86efac",lineHeight:"1.5"}}));
+    content.appendChild(good);
+  }
+
+  // Quiz
+  if(card.quiz) {
+    card.quiz.options.forEach((opt,i) => {
+      const revealed = state.quiz !== null;
+      let bg = "var(--bg2)", border = "var(--border)", col = "var(--text)";
+      if(revealed && state.quiz===i && opt.correct) { bg="rgba(34,197,94,.08)"; border="rgba(34,197,94,.3)"; col="var(--green)"; }
+      if(revealed && state.quiz===i && !opt.correct) { bg="rgba(239,68,68,.08)"; border="rgba(239,68,68,.3)"; col="var(--red)"; }
+      if(revealed && state.quiz!==i && opt.correct) { bg="rgba(34,197,94,.05)"; border="rgba(34,197,94,.2)"; col="var(--green)"; }
+      const prefix = revealed && opt.correct ? "✅ " : revealed && state.quiz===i && !opt.correct ? "❌ " : "";
+      const btn = h("button","",prefix + opt.text,{style:{width:"100%",padding:"14px 16px",borderRadius:"12px",marginBottom:"8px",background:bg,border:`1.5px solid ${border}`,color:col,fontSize:"13px",lineHeight:"1.5",textAlign:"left",cursor:revealed?"default":"pointer"},onClick:()=>{ if(state.quiz===null){state.quiz=i; render();} }});
+      content.appendChild(btn);
+    });
+    if(state.quiz !== null) {
+      const exp = h("div","fx-up",null,{style:{padding:"14px",borderRadius:"12px",marginTop:"8px",background:"rgba(245,158,11,.06)",border:"1px solid rgba(245,158,11,.15)"}});
+      exp.appendChild(h("div","","💡 Explicação",{style:{fontSize:"12px",fontWeight:"600",color:"var(--yellow)",marginBottom:"4px"}}));
+      exp.appendChild(h("div","",card.quiz.explanation,{style:{fontSize:"13px",color:"#fcd34d",lineHeight:"1.5"}}));
+      content.appendChild(exp);
+    }
+  }
+
+  // Nav buttons
+  const nav = h("div","",null,{style:{display:"flex",gap:"10px",marginTop:"24px"}});
+  if(state.card > 0) {
+    nav.appendChild(h("button","btn-ghost","← Voltar",{style:{flex:"1"},onClick:()=>{ state.card--; state.quiz=null; render(); }}));
+  }
+  const isLast = state.card >= lesson.cards.length - 1;
+  const lessonIdx = LESSONS.findIndex(l=>l.id===lesson.id);
+  const hasNext = lessonIdx < LESSONS.length - 1;
+  const nextLabel = !isLast ? "Próximo →" : hasNext ? "Próxima Aula →" : "Concluir 🎉";
+  const nextBtn = h("button","",nextLabel,{style:{flex:"2",padding:"14px",borderRadius:"12px",background:`linear-gradient(135deg,${lesson.color}cc,${lesson.color})`,color:"#fff",fontSize:"14px",fontWeight:"700"},onClick:()=>{
+    if(!isLast) { state.card++; state.quiz=null; }
+    else {
+      if(!state.completed.includes(lesson.id)) { state.completed.push(lesson.id); save(); }
+      if(hasNext) { state.lesson=LESSONS[lessonIdx+1]; state.card=0; state.quiz=null; }
+      else { state.view="home"; }
+    }
+    render();
+  }});
+  nav.appendChild(nextBtn);
+  content.appendChild(nav);
+  w.appendChild(content);
+  p.appendChild(w);
+}
+
+/* ═══ BUILD ═══ */
+function renderBuild(p) {
+  const w = h("div","fx-in",null,{style:{padding:"0 0 100px"}});
+  const analysis = analyzePrompt(state.sections);
+
+  // Header
+  const hdr = h("div","",null,{style:{padding:"14px 20px",display:"flex",alignItems:"center",gap:"12px",borderBottom:"1px solid rgba(30,41,59,.2)"}});
+  hdr.appendChild(h("button","","←",{style:{color:"var(--text3)",fontSize:"20px"},onClick:()=>{ state.view="home"; render(); }}));
+  hdr.appendChild(h("div","","🔨 Construir Prompt",{style:{flex:"1",fontSize:"16px",fontWeight:"700"}}));
+  const ring = h("div","progress-ring",null,{style:{background:`conic-gradient(${analysis.grade.color} ${analysis.score*3.6}deg, var(--border) 0deg)`}});
+  const ringIn = h("div","progress-ring-inner",analysis.score+"",{style:{color:analysis.grade.color}});
+  ring.appendChild(ringIn); hdr.appendChild(ring);
+  w.appendChild(hdr);
+
+  // Templates
+  const tpl = h("div","",null,{style:{padding:"14px 20px 6px",display:"flex",gap:"8px",overflowX:"auto"}});
+  TEMPLATES.forEach(t => {
+    const cls = state.template===t.id ? "pill on" : "pill";
+    tpl.appendChild(h("button",cls,t.emoji+" "+t.name,{onClick:()=>{
+      state.template=t.id;
+      Object.entries(t.s).forEach(([k,v])=>{ if(v) state.sections[k]=v; });
+      render();
+    }}));
+  });
+  w.appendChild(tpl);
+
+  // Section tabs
+  const tabs = h("div","",null,{style:{padding:"10px 20px 0",display:"flex",gap:"3px",overflowX:"auto"}});
+  SECTION_META.forEach(s => {
+    const filled = !!state.sections[s.id].trim();
+    const active = state.activeSection === s.id;
+    const cls = active ? "section-tab on" : "section-tab";
+    const dot = filled ? '<span class="tag" style="background:var(--green)"></span>' : s.required ? '<span class="tag" style="background:var(--red)"></span>' : '';
+    tabs.appendChild(h("button",cls,s.icon+" "+s.label+" "+dot,{onClick:()=>{ state.activeSection=s.id; render(); }}));
+  });
+  w.appendChild(tabs);
+
+  // Editor
+  const sec = SECTION_META.find(s=>s.id===state.activeSection);
+  const ed = h("div","fx-up",null,{style:{padding:"12px 20px"}});
+
+  // Tip
+  const tip = h("div","",null,{style:{padding:"10px 14px",borderRadius:"10px",marginBottom:"10px",background:"rgba(129,140,248,.04)",border:"1px solid rgba(129,140,248,.1)",display:"flex",alignItems:"center",gap:"8px"}});
+  tip.appendChild(h("span","","💡",{style:{fontSize:"14px"}}));
+  tip.appendChild(h("span","",sec.tip,{style:{fontSize:"12px",color:"var(--accent2)",flex:"1",lineHeight:"1.4"}}));
+  ed.appendChild(tip);
+
+  // Textarea
+  const ta = h("textarea","","",{style:{width:"100%",padding:"16px",background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:"14px",color:"var(--text)",fontSize:"14px",lineHeight:"1.7",resize:"vertical",minHeight:"170px"},placeholder:sec.placeholder});
+  ta.value = state.sections[state.activeSection];
+  ta.addEventListener("input", e => { state.sections[state.activeSection] = e.target.value; });
+  ta.addEventListener("focus", e => e.target.style.borderColor = "rgba(129,140,248,.25)");
+  ta.addEventListener("blur", e => e.target.style.borderColor = "var(--border)");
+  ed.appendChild(ta);
+
+  if(sec.required && !state.sections[state.activeSection].trim()) {
+    ed.appendChild(h("p","","🔴 Obrigatório para um prompt funcional",{style:{fontSize:"11px",color:"var(--red)",marginTop:"6px"}}));
+  }
+
+  // Section nav
+  const idx = SECTION_META.findIndex(s=>s.id===state.activeSection);
+  const nav = h("div","",null,{style:{display:"flex",gap:"8px",marginTop:"12px"}});
+  if(idx > 0) nav.appendChild(h("button","btn-ghost","← Anterior",{style:{flex:"1"},onClick:()=>{ state.activeSection=SECTION_META[idx-1].id; render(); }}));
+  if(idx < SECTION_META.length-1) {
+    nav.appendChild(h("button","","Próximo →",{style:{flex:"2",padding:"12px",borderRadius:"10px",background:"rgba(129,140,248,.12)",color:"var(--accent2)",fontSize:"13px",fontWeight:"600"},onClick:()=>{ state.activeSection=SECTION_META[idx+1].id; render(); }}));
+  } else {
+    nav.appendChild(h("button","","Ver Resultado 🚀",{style:{flex:"2",padding:"12px",borderRadius:"10px",background:"linear-gradient(135deg,#06b6d4,#818cf8)",color:"#fff",fontSize:"13px",fontWeight:"700"},onClick:()=>{ state.view="result"; render(); }}));
+  }
+  ed.appendChild(nav);
+  w.appendChild(ed);
+  p.appendChild(w);
+}
+
+/* ═══ RESULT ═══ */
+function renderResult(p) {
+  const analysis = analyzePrompt(state.sections);
+  const prompt = buildPrompt();
+  const w = h("div","fx-in",null,{style:{padding:"0 0 100px"}});
+
+  // Header
+  const hdr = h("div","",null,{style:{padding:"14px 20px",display:"flex",alignItems:"center",gap:"12px",borderBottom:"1px solid rgba(30,41,59,.2)"}});
+  hdr.appendChild(h("button","","←",{style:{color:"var(--text3)",fontSize:"20px"},onClick:()=>{ state.view="build"; render(); }}));
+  hdr.appendChild(h("div","","🚀 Seu Prompt",{style:{fontSize:"16px",fontWeight:"700"}}));
+  w.appendChild(hdr);
+
+  const body = h("div","",null,{style:{padding:"16px 20px"}});
+
+  // Score card
+  const sc = h("div","card",null,{style:{display:"flex",alignItems:"center",gap:"16px",marginBottom:"16px"}});
+  const ring = h("div","progress-ring",null,{style:{width:"56px",height:"56px",background:`conic-gradient(${analysis.grade.color} ${analysis.score*3.6}deg, var(--border) 0deg)`,flexShrink:"0"}});
+  const ringIn = h("div","progress-ring-inner",analysis.score+"",{style:{width:"46px",height:"46px",fontSize:"16px",fontWeight:"800",color:analysis.grade.color}});
+  ring.appendChild(ringIn); sc.appendChild(ring);
+  const info = h("div");
+  info.appendChild(h("div","",analysis.grade.label+" "+analysis.grade.emoji,{style:{fontSize:"15px",fontWeight:"700"}}));
+  const filled = Object.values(state.sections).filter(v=>v.trim()).length;
+  info.appendChild(h("div","",filled+"/6 seções preenchidas",{style:{fontSize:"12px",color:"var(--text3)",marginTop:"2px"}}));
+  sc.appendChild(info);
+  body.appendChild(sc);
+
+  // Analysis items
+  const feedback = h("div","card",null,{style:{marginBottom:"16px"}});
+  feedback.appendChild(h("div","","📊 Análise Automática",{style:{fontSize:"14px",fontWeight:"700",marginBottom:"12px"}}));
+  analysis.items.forEach(item => {
+    feedback.appendChild(h("div","",item.t+" "+item.c,{style:{fontSize:"13px",color:item.t==="✅"?"#86efac":"#fca5a5",lineHeight:"1.6",marginBottom:"4px"}}));
+  });
+  if(analysis.tips.length) {
+    feedback.appendChild(h("div","","",{style:{height:"1px",background:"var(--border)",margin:"10px 0"}}));
+    feedback.appendChild(h("div","","💡 Dicas de melhoria:",{style:{fontSize:"12px",fontWeight:"600",color:"var(--yellow)",marginBottom:"6px"}}));
+    analysis.tips.forEach(tip => {
+      feedback.appendChild(h("div","","⚡ "+tip,{style:{fontSize:"12px",color:"#fcd34d",lineHeight:"1.6",marginBottom:"4px",paddingLeft:"4px"}}));
+    });
+  }
+  body.appendChild(feedback);
+
+  // Prompt preview
+  const preview = h("div","card",null,{style:{marginBottom:"16px"}});
+  preview.appendChild(h("div","","📄 Prompt Final (XML)",{style:{fontSize:"13px",fontWeight:"600",color:"var(--text2)",marginBottom:"10px"}}));
+  const pre = h("pre","",escHtml(prompt||"Preencha as seções para ver o prompt..."),{style:{padding:"14px",background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"10px",color:"#67e8f9",fontSize:"12px",fontFamily:"'JetBrains Mono',monospace",lineHeight:"1.6",whiteSpace:"pre-wrap",wordBreak:"break-word",maxHeight:"350px",overflowY:"auto"}});
+  preview.appendChild(pre);
+  body.appendChild(preview);
+
+  // Copy
+  const copyBtn = h("button","btn-primary",state.copied?"✅ Copiado!":"📋 Copiar Prompt",{style:{marginBottom:"10px",background:state.copied?"var(--green)":"var(--text)",color:state.copied?"#fff":"var(--bg)"},onClick:()=>{
+    navigator.clipboard.writeText(prompt);
+    state.copied=true; render();
+    setTimeout(()=>{ state.copied=false; render(); }, 2000);
+  }});
+  if(!prompt.trim()) { copyBtn.style.opacity = ".4"; copyBtn.style.pointerEvents = "none"; }
+  body.appendChild(copyBtn);
+
+  // Share
+  body.appendChild(h("button","","📤 Compartilhar este app com amigos",{style:{width:"100%",padding:"14px",borderRadius:"14px",background:"rgba(34,197,94,.1)",border:"1.5px solid rgba(34,197,94,.25)",color:"var(--green)",fontSize:"14px",fontWeight:"600",marginBottom:"10px"},onClick:shareApp}));
+
+  // Back to edit
+  body.appendChild(h("button","btn-ghost","✏️ Voltar e editar",{onClick:()=>{ state.view="build"; render(); }}));
+
+  // Author credit
+  body.appendChild(h("div","","Criado por <strong>Fabricio Julio</strong>",{style:{textAlign:"center",fontSize:"11px",color:"var(--text4)",marginTop:"20px",paddingBottom:"8px"}}));
+
+  w.appendChild(body);
+  p.appendChild(w);
+}
+
+/* ═══ BOTTOM NAV ═══ */
+function renderNav(p) {
+  const nav = h("div","bottom-nav");
+  [{v:"home",icon:"🏠",label:"Início"},{v:"learn",icon:"📖",label:"Aprender"},{v:"build",icon:"🔨",label:"Construir"}].forEach(item => {
+    const cls = state.view===item.v || (item.v==="learn" && state.view==="learn") ? "nav-btn on" : "nav-btn";
+    const btn = h("button",cls,`<span style="font-size:18px">${item.icon}</span>${item.label}`,{onClick:()=>{
+      if(item.v==="learn" && !state.lesson) { state.lesson=LESSONS[0]; state.card=0; state.quiz=null; }
+      state.view=item.v; render();
+    }});
+    nav.appendChild(btn);
+  });
+  p.appendChild(nav);
+}
+
+/* ═══ HELPERS ═══ */
+function buildPrompt() {
+  let p = "";
+  if(state.sections.role) p += `<role>\n${state.sections.role}\n</role>\n\n`;
+  if(state.sections.context) p += `<context>\n${state.sections.context}\n</context>\n\n`;
+  if(state.sections.task) p += `<task>\n${state.sections.task}\n</task>\n\n`;
+  if(state.sections.format) p += `<output_format>\n${state.sections.format}\n</output_format>\n\n`;
+  if(state.sections.constraints) p += `<constraints>\n${state.sections.constraints}\n</constraints>\n\n`;
+  if(state.sections.examples) p += `<examples>\n${state.sections.examples}\n</examples>`;
+  return p.trim();
+}
+
+function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function shareApp() {
+  const url = window.location.href;
+  const text = "🧠 Aprenda a criar prompts profissionais para IA!\n\nApp gratuito e interativo com aulas, quizzes e um construtor de prompts.\nPor Fabricio Julio\n\nAcessa aí: " + url;
+  if(navigator.share) navigator.share({title:"Prompt Architect",text,url});
+  else { navigator.clipboard.writeText(text); alert("Link copiado! Cole no WhatsApp 📱"); }
+}
+
+// ─── BOOT ───
+render();
+</script>
+</body>
+</html>
